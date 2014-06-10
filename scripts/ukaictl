@@ -1,0 +1,110 @@
+#!/usr/bin/env python
+
+import getopt
+import sys
+
+from ukai_config import UKAIConfig
+from ukai_core import UKAI_CONFIG_FILE_DEFAULT
+from ukai_rpc import UKAIXMLRPCClient
+
+class UKAICtl(object):
+    def __init__(self, config_file):
+        self._config = UKAIConfig(config_file)
+        self._rpc_client = UKAIXMLRPCClient(self._config)
+
+    @property
+    def core_server(self):
+        return self._config.get('core_server')
+
+    @core_server.setter
+    def core_server(self, core_server):
+        self._config.set('core_server', core_server)
+
+    @property
+    def core_port(self):
+        return self._config.get('core_port')
+
+    @core_port.setter
+    def core_port(self, core_port):
+        self._config.set('core_port', core_port)
+
+    def add_image(self, params):
+        if len(params) < 1:
+            print 'Usage: %s add_image IMAGE_NAME' % sys.argv[0]
+            return -1
+        return self._rpc_client.call('add_image', *params)
+
+    def remove_image(self, params):
+        if len(params) < 1:
+            print 'Usage: %s remove_image IMAGE_NAME' % sys.argv[0]
+            return -1
+        return self._rpc_client.call('remove_image', *params)
+
+    def add_location(self, params):
+        if len(params) < 2:
+            print ('Usage: %s add_location IMAGE_NAME LOCATION'
+                   % sys.argv[0])
+            return -1
+        return self._rpc_client.call('add_location', *params)
+
+    def remove_location(self, params):
+        if len(params) < 2:
+            print ('Usage: %s remove_location IMAGE_NAME LOCATION'
+                   % sys.argv[0])
+            return -1
+        return self._rpc_client.call('remove_location', *params)
+
+    def add_hypervisor(self, params):
+        if len(params) < 2:
+            print ('Usage: %s add_hypervisor IMAGE_NAME HYPERVISOR'
+                   % sys.argv[0])
+            return -1
+        return self._rpc_client.call('add_hypervisor', *params)
+
+    def remove_hypervisor(self, params):
+        if len(params) < 2:
+            print ('Usage: %s remove_hypervisor IMAGE_NAME HYPERVISOR'
+                   % sys.argv[0])
+            return -1
+        return self._rpc_client.call('remove_hypervisor', *params)
+
+    def get_metadata(self, params):
+        if len(params) < 1:
+            print 'Usage: %s get_metadata IMAGE_NAME' % sys.argv[0]
+            return -1
+        metadata = self._rpc_client.call('get_metadata', *params)
+        print metadata
+        return 0
+
+
+def usage():
+    print '''Usage: %s SUBCOMMAND PARAMS
+[SUBCOMMANDS]
+\tadd_image IMAGE_NAME
+\tremove_image IMAGE_NAME''' % sys.argv[0]
+
+def main():
+    server = '127.0.0.1'
+    port = 22221
+
+    if len(sys.argv) < 2:
+        usage()
+        sys.exit(-1)
+    
+    ctl = UKAICtl(UKAI_CONFIG_FILE_DEFAULT)
+
+    (optlist, args) = getopt.getopt(sys.argv[1:], 'h:p:')
+    for opt_pair in optlist:
+        if opt_pair[0] == '-h':
+            ctl.core_server = opt_pair[1]
+        if opt_pair[0] == '-p':
+            ctl.core_port = opt_pair[1]
+
+    if not hasattr(ctl, args[0]):
+        usage()
+        sys.exit(-1)
+
+    return getattr(ctl, args[0])(args[1:])
+
+if __name__ == '__main__':
+    main()
