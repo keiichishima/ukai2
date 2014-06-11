@@ -145,14 +145,13 @@ class UKAICore(object):
     '''
     def proxy_read(self, image_name, block_size, block_index, offset,
                    size):
-        return zlib.compress(ukai_local_read(image_name, block_size,
-                                             block_index,
-                                             offset, size,
-                                             self._config))
+        data = ukai_local_read(image_name, block_size, block_index,
+                               offset, size, self._config)
+        return self._rpc_trans.encode(zlib.compress(data))
 
     def proxy_write(self, image_name, block_size, block_index, offset,
-                    compressed_data):
-        data = zlib.decompress(compressed_data)
+                    encoded_data):
+        data = zlib.decompress(self._rpc_trans.decode(encoded_data))
         return ukai_local_write(image_name, block_size, block_index,
                                 offset, data, self._config)
 
@@ -160,14 +159,19 @@ class UKAICore(object):
         return ukai_local_allocate_dataspace(image_name, block_size,
                                              block_index, self._config)
 
-    def proxy_update_metadata(self, image_name, compressed_metadata):
-        json_metadata = zlib.decompress(compressed_metadata)
+    def proxy_update_metadata(self, image_name, encoded_metadata):
+        json_metadata = zlib.decompress(self._rpc_trans.decode(
+                encoded_metadata))
         if image_name in self._metadata_dict:
             self._metadata_dict[image_name].metadata = json_metadata
         else:
             metadata = UKAIMetadata(image_name=image_name,
                                     metadata_raw=json_metadata,
                                     config=self._config)
+            self._metadata_dict[image_name] = metadata
+            self._data_dict[image_name] = UKAIData(metadata,
+                                                   self._node_error_state_set,
+                                                   self._config)
             UKAIStatistics[image_name] = UKAIImageStatistics()
 
         return 0
@@ -229,14 +233,5 @@ class UKAICore(object):
 
     def get_metadata(self, image_name):
         if image_name not in self._metadata_dict:
-            return json.dumps('')
-        return json.dumps(self._metadata_dict[image_name].metadata)
-        
-    def test(self, count):
-        import time
-        i = count
-        while i > 0:
-            i = i - 1
-            time.sleep(1)
-            print i
-        return 0
+            return errno.ENOENT, None
+        return 0, json.dumps(self._metadata_dict[image_name].metadata)
