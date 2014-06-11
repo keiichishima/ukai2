@@ -3,6 +3,11 @@ import os
 def ukai_local_read(image_name, block_size, block_index, offset, size, config):
     path = '%s/%s/' % (config.get('data_root'), image_name)
     path = path + config.get('blockname_format') % block_index
+    if ((not os.path.exists(path))
+        or (os.path.getsize(path) != block_size)):
+        # the data block file is not allcated yet.
+        ukai_local_allocate_dataspace(image_name, block_size, block_index,
+                                      config)
     fh = open(path, 'r')
     fh.seek(offset)
     data = fh.read(size)
@@ -14,9 +19,11 @@ def ukai_local_read(image_name, block_size, block_index, offset, size, config):
 def ukai_local_write(image_name, block_size, block_index, offset, data, config):
     path = '%s/%s/' % (config.get('data_root'), image_name)
     path = path + config.get('blockname_format') % block_index
-    if not os.path.exists(path):
-        # XXX shoud not happen.
-        return 0
+    if ((not os.path.exists(path))
+        or (os.path.getsize(path) != block_size)):
+        # the data block file is not allcated yet.
+        ukai_local_allocate_dataspace(image_name, block_size, block_index,
+                                      config)
     fh = open(path, 'r+')
     fh.seek(offset)
     fh.write(data)

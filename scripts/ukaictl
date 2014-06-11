@@ -29,6 +29,38 @@ class UKAICtl(object):
     def core_port(self, core_port):
         self._config.set('core_port', core_port)
 
+    def create_image(self, *params):
+        def usage():
+            print 'Usage: %s create_image [-s SIZE] [-b BLOCK_SIZE] [-l LOCATION] [-h HYPERVISOR] IMAGE_NAME' % sys.argv[0]
+
+        if len(params) < 1:
+            usage()
+            return -1
+
+        size = None
+        block_size = None
+        location = None
+        hypervisor = None
+        (optlist, args) = getopt.getopt(params, 's:b:l:h:')
+        for opt_pair in optlist:
+            if opt_pair[0] == '-s':
+                size = int(opt_pair[1])
+            if opt_pair[0] == '-b':
+                block_size = int(opt_pair[1])
+            if opt_pair[0] == '-l':
+                location = opt_pair[1]
+            if opt_pair[0] == '-h':
+                hypervisor = opt_pair[1]
+        if size is None:
+            usage()
+            return -1
+        image_name = args[0]
+        
+        return self._rpc_client.call('create_image', image_name,
+                                     size, block_size,
+                                     location, hypervisor)
+        
+
     def add_image(self, *params):
         if len(params) < 1:
             print 'Usage: %s add_image IMAGE_NAME' % sys.argv[0]

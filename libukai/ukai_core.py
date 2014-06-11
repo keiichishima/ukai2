@@ -37,6 +37,7 @@ from ukai_data import UKAIData
 from ukai_local_io import ukai_local_read, ukai_local_write
 from ukai_local_io import ukai_local_allocate_dataspace
 from ukai_metadata import UKAIMetadata, UKAI_OUT_OF_SYNC
+from ukai_metadata import ukai_metadata_create
 from ukai_node_error_state import UKAINodeErrorStateSet
 from ukai_rpc import UKAIXMLRPCTranslation
 from ukai_statistics import UKAIStatistics, UKAIImageStatistics
@@ -160,14 +161,12 @@ class UKAICore(object):
                                              block_index, self._config)
 
     def proxy_update_metadata(self, image_name, encoded_metadata):
-        json_metadata = zlib.decompress(self._rpc_trans.decode(
-                encoded_metadata))
+        metadata_raw = json.loads(zlib.decompress(self._rpc_trans.decode(
+                    encoded_metadata)))
         if image_name in self._metadata_dict:
-            self._metadata_dict[image_name].metadata = json_metadata
+            self._metadata_dict[image_name].metadata = metadata_raw
         else:
-            metadata = UKAIMetadata(image_name=image_name,
-                                    metadata_raw=json_metadata,
-                                    config=self._config)
+            metadata = UKAIMetadata(image_name, self._config, metadata_raw)
             self._metadata_dict[image_name] = metadata
             self._data_dict[image_name] = UKAIData(metadata,
                                                    self._node_error_state_set,
@@ -178,12 +177,31 @@ class UKAICore(object):
 
     ''' Controll processing.
     '''
+    def create_image(self, image_name, size, block_size=None,
+                     location=None, hypervisor=None):
+        assert image_name is not None
+        assert size > 0
+
+        if block_size is None:
+            defaults = self._config.get('create_default')
+            block_size = defaults['block_size']
+        assert block_size > 0
+        assert size > block_size
+        assert size % block_size == 0
+        block_count = size / block_size
+
+        if location is None:
+            location = self._config.get('core_server')
+        if hypervisor is None:
+            hypervisor = self._config.get('core_server')
+
+        ukai_metadata_create(image_name, size, block_size,
+                             location, hypervisor, self._config)
+
     def add_image(self, image_name):
         if image_name in self._metadata_dict:
             return errno.EEXIST
-        metadata = UKAIMetadata(image_name=image_name,
-                                metadata_raw=None,
-                                config=self._config)
+        metadata = UKAIMetadata(image_name, self._config)
         self._metadata_dict[image_name] = metadata
         data = UKAIData(metadata=metadata,
                         node_error_state_set=self._node_error_state_set,

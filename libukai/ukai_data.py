@@ -32,31 +32,20 @@ data of the UKAI system.
 '''
 
 import os
-import threading
 import sys
+import threading
 import xmlrpclib
-import netifaces
 import zlib
 
+import netifaces
+
 from ukai_config import UKAIConfig
+from ukai_local_io import ukai_local_read, ukai_local_write
 from ukai_metadata import UKAIMetadata
 from ukai_metadata import UKAI_IN_SYNC, UKAI_SYNCING, UKAI_OUT_OF_SYNC
 from ukai_statistics import UKAIStatistics
 from ukai_utils import UKAIIsLocalNode
 
-def UKAIDataCreate(data_root, name, size, block_size, block_count,
-                   blockname_format):
-    import os
-
-    for idx in range(0, block_count):
-        block_path = '%s/%s/' % (data_root, name)
-        if not os.path.exists(block_path):
-            os.makedirs(block_path)
-        block_path = block_path + blockname_format % idx
-        fh = open(block_path, 'w')
-        fh.seek(block_size - 1)
-        fh.write('\0')
-        fh.close()
 
 class UKAIData(object):
     '''
@@ -233,14 +222,10 @@ class UKAIData(object):
             block.
         size: the length of the data to be read.
         '''
-        path = '%s/%s/' % (self._config.get('data_root'),
-                           self._metadata.name)
-        path = path + self._config.get('blockname_format') % blk_idx
-        fh = open(path, 'r')
-        fh.seek(off_in_blk)
-        data = fh.read(size_in_blk)
-        fh.close()
-        assert data is not None
+        data = ukai_local_read(self._metadata.name,
+                               self._metadata.block_size,
+                               blk_idx, off_in_blk, size_in_blk,
+                               self._config)
         return (data)
 
     def _get_data_remote(self, node, blk_idx, off_in_blk, size_in_blk):
@@ -361,14 +346,10 @@ class UKAIData(object):
             block.
         data: the data to be written.
         '''
-        path = '%s/%s/' % (self._config.get('data_root'),
-                           self._metadata.name)
-        path = path + self._config.get('blockname_format') % blk_idx
-        fh = open(path, 'r+')
-        fh.seek(off_in_blk)
-        fh.write(data)
-        fh.close()
-        return (len(data))
+        return ukai_local_write(self._metadata.name,
+                                self._metadata.block_size,
+                                blk_idx, off_in_blk, data,
+                                self._config)
 
     def _put_data_remote(self, node, blk_idx, off_in_blk, data):
         '''

@@ -155,6 +155,7 @@ def main():
     FUSE(UKAIFUSE(config_file), mountpoint,
          foreground=fuse_foreground,
          debug=fuse_debug,
+         nothreads=True, # XXX to avoid parallel XMLRPC messages.
          allow_other=True)
 
 if __name__ == '__main__':
