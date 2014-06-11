@@ -72,7 +72,7 @@ class UKAICtl(object):
         if len(params) < 1:
             print 'Usage: %s get_metadata IMAGE_NAME' % sys.argv[0]
             return -1
-        metadata = self._rpc_client.call('get_metadata', *params)
+        ret, metadata = self._rpc_client.call('get_metadata', *params)
         print metadata
         return 0
 
