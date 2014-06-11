@@ -257,12 +257,13 @@ class UKAIData(object):
         '''
         remote = xmlrpclib.ServerProxy('http://%s:%d/' %
                                        (node,
-                                        self._config.get('proxy_port')))
-        return (zlib.decompress(remote.read(self._metadata.name,
-                                            self._metadata.block_size,
-                                            blk_idx,
-                                            off_in_blk,
-                                            size_in_blk).data))
+                                        self._config.get('core_port')))
+        encoded_data = remote.proxy_read(self._metadata.name,
+                                         self._metadata.block_size,
+                                         blk_idx,
+                                         off_in_blk,
+                                         size_in_blk)
+        return zlib.decompress(encoded_data.data)
 
     def write(self, data, offset):
         '''
@@ -382,12 +383,12 @@ class UKAIData(object):
         '''
         remote = xmlrpclib.ServerProxy('http://%s:%d/' %
                                        (node,
-                                        self._config.get('proxy_port')))
-        return (remote.write(self._metadata.name,
-                             self._metadata.block_size,
-                             blk_idx,
-                             off_in_blk,
-                             xmlrpclib.Binary(zlib.compress(data))))
+                                        self._config.get('core_port')))
+        return (remote.proxy_write(self._metadata.name,
+                                   self._metadata.block_size,
+                                   blk_idx,
+                                   off_in_blk,
+                                   xmlrpclib.Binary(zlib.compress(data))))
 
     def synchronize_block(self, blk_idx):
         '''
@@ -466,10 +467,10 @@ class UKAIData(object):
         else:
             remote = xmlrpclib.ServerProxy('http://%s:%d/' %
                                            (node,
-                                            self._config.get('proxy_port')))
-            remote.allocate_dataspace(self._metadata.name,
-                                      self._metadata.block_size,
-                                      blk_idx)
+                                            self._config.get('core_port')))
+            remote.proxy_allocate_dataspace(self._metadata.name,
+                                            self._metadata.block_size,
+                                            blk_idx)
 
 if __name__ == '__main__':
     from ukai_node_error_state import UKAINodeErrorStateSet

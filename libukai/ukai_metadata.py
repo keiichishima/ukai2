@@ -143,8 +143,8 @@ class UKAIMetadata(object):
                                                    (hv,
                                                     self._config.get('proxy_port')))
                     self._set_hypervisor_sync_status(hv, UKAI_IN_SYNC)
-                    remote.update_metadata(self.name,
-                                           xmlrpclib.Binary(zlib.compress(json.dumps(self._metadata))))
+                    remote.proxy_update_metadata(self.name,
+                                                 xmlrpclib.Binary(zlib.compress(json.dumps(self._metadata))))
                 except (IOError, xmlrpclib.Error), e:
                     print e.__class__
                     print 'Failed to update metadata at %s.  You cannot migrate a virtual machine to %s' % (hv, hv)
