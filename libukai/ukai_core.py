@@ -177,8 +177,8 @@ class UKAICore(object):
 
     ''' Controll processing.
     '''
-    def create_image(self, image_name, size, block_size=None,
-                     location=None, hypervisor=None):
+    def ctl_create_image(self, image_name, size, block_size=None,
+                         location=None, hypervisor=None):
         assert image_name is not None
         assert size > 0
 
@@ -198,7 +198,7 @@ class UKAICore(object):
         ukai_metadata_create(image_name, size, block_size,
                              location, hypervisor, self._config)
 
-    def add_image(self, image_name):
+    def ctl_add_image(self, image_name):
         if image_name in self._metadata_dict:
             return errno.EEXIST
         metadata = UKAIMetadata(image_name, self._config)
@@ -210,7 +210,7 @@ class UKAICore(object):
         UKAIStatistics[image_name] = UKAIImageStatistics()
         return 0
 
-    def remove_image(self, image_name):
+    def ctl_remove_image(self, image_name):
         if image_name not in self._metadata_dict:
             return errno.ENOENT
         del self._metadata_dict[image_name]
@@ -218,44 +218,44 @@ class UKAICore(object):
         del UKAIStatistics[image_name]
         return 0
 
-    def get_metadata(self, image_name):
+    def ctl_get_metadata(self, image_name):
         if image_name not in self._metadata_dict:
             return errno.ENOENT, None
         return 0, json.dumps(self._metadata_dict[image_name].metadata)
 
-    def add_location(self, image_name, location,
-                     start_index=0, end_index=-1,
-                     sync_status=UKAI_OUT_OF_SYNC):
+    def ctl_add_location(self, image_name, location,
+                         start_index=0, end_index=-1,
+                         sync_status=UKAI_OUT_OF_SYNC):
         if image_name not in self._metadata_dict:
             return errno.ENOENT
         metadata = self._metadata_dict[image_name]
         metadata.add_location(location, start_index, end_index, sync_status)
         return 0
 
-    def remove_location(self, image_name, location,
-                        start_index=0, end_index=-1):
+    def ctl_remove_location(self, image_name, location,
+                            start_index=0, end_index=-1):
         if image_name not in self._metadata_dict:
             return errno.ENOENT
         metadata = self._metadata_dict[image_name]
         metadata.remove_location(location, start_index, end_index)
         return 0 
 
-    def add_hypervisor(self, image_name, hypervisor):
+    def ctl_add_hypervisor(self, image_name, hypervisor):
         if image_name not in self._metadata_dict:
             return errno.ENOENT
         metadata = self._metadata_dict[image_name]
         metadata.add_hypervisor(hypervisor)
         return 0
 
-    def remove_hypervisor(self, image_name, hypervisor):
+    def ctl_remove_hypervisor(self, image_name, hypervisor):
         if image_name not in self._metadata_dict:
             return errno.ENOENT
         metadata = self._metadata_dict[image_name]
         metadata.remove_hypervisor(hypervisor)
         return 0
 
-    def synchronize(self, image_name, start_index=0, end_index=-1,
-                    verbose=False):
+    def ctl_synchronize(self, image_name, start_index=0, end_index=-1,
+                        verbose=False):
         if image_name not in self._metadata_dict:
             return errno.ENOENT
         metadata = self._metadata_dict[image_name]
@@ -271,5 +271,5 @@ class UKAICore(object):
                 metadata.flush()
         return 0
 
-    def get_node_error_state_set(self):
+    def ctl_get_node_error_state_set(self):
         return self._node_error_state_set.get_list()
