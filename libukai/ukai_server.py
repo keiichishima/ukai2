@@ -26,7 +26,6 @@
 # OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
 # OF SUCH DAMAGE.
 
-import msgpackrpc
 from SimpleXMLRPCServer import SimpleXMLRPCServer
 import SocketServer
 import xmlrpclib
@@ -36,16 +35,6 @@ from ukai_core import UKAICore, UKAI_CONFIG_FILE_DEFAULT
 class AsyncSimpleXMLRPCServer(SocketServer.ThreadingMixIn,
                               SimpleXMLRPCServer):
     pass
-
-def main2():
-    try:
-        core = UKAICore(config_file=UKAI_CONFIG_FILE_DEFAULT)
-        server = msgpackrpc.Server(core)
-        server.listen(msgpackrpc.Address(core.core_server,
-                                         core.core_port))
-        server.start()
-    except KeyboardInterrupt, e:
-        pass
 
 def main():
     try:
