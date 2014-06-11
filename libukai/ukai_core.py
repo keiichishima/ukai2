@@ -145,14 +145,13 @@ class UKAICore(object):
     '''
     def proxy_read(self, image_name, block_size, block_index, offset,
                    size):
-        return zlib.compress(ukai_local_read(image_name, block_size,
-                                             block_index,
-                                             offset, size,
-                                             self._config))
+	data = ukai_local_read(image_name, block_size, block_index,
+		offset, size, self._config)
+        return self._rpc_trans.encode(zlib.compress(data))
 
     def proxy_write(self, image_name, block_size, block_index, offset,
-                    compressed_data):
-        data = zlib.decompress(compressed_data)
+                    encoded_data):
+        data = zlib.decompress(self._rpc_trans.decode(encoded_data))
         return ukai_local_write(image_name, block_size, block_index,
                                 offset, data, self._config)
 
