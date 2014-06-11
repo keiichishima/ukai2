@@ -39,9 +39,9 @@ class UKAIFUSE(LoggingMixIn, Operations):
     ''' UKAI FUSE connector.
     '''
 
-    def __init__(self, config_file):
+    def __init__(self, config):
         self._fd = 0
-        self._config = UKAIConfig(config_file)
+        self._config = config
         self._rpc_client = UKAIXMLRPCClient(self._config)
         self._rpc_trans = UKAIXMLRPCTranslation()
 
@@ -141,6 +141,7 @@ def main():
 
     fuse_foreground = False
     fuse_debug = False
+    fuse_nothreads = False
     config_file = UKAI_CONFIG_FILE_DEFAULT
     (optlist, args) = getopt.getopt(sys.argv[1:], 'fdc:')
     for opt_pair in optlist:
@@ -152,10 +153,16 @@ def main():
             config_file = opt_pair[1]
     mountpoint = args[0]
 
-    FUSE(UKAIFUSE(config_file), mountpoint,
+    config = UKAIConfig(config_file)
+    fuse_options = config.get('fuse_options')
+    if (fuse_options is not None
+        and 'nothreads' in fuse_options):
+        fuse_nothreads = fuse_options['nothreads']
+
+    FUSE(UKAIFUSE(config), mountpoint,
          foreground=fuse_foreground,
          debug=fuse_debug,
-         nothreads=True, # XXX to avoid parallel XMLRPC messages.
+         nothreads=fuse_nothreads,
          allow_other=True)
 
 if __name__ == '__main__':

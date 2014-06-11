@@ -49,18 +49,44 @@ class UKAIXMLRPCClient(UKAIRPCClient):
         self._config = config
 
     def call(self, method, *params):
-        if self._client is None:
-            self._client = xmlrpclib.ServerProxy(
+        '''
+            '''
+        fuse_options = self._config.get('fuse_options')
+        if (fuse_options is not None
+            and 'nothreads' in fuse_options
+            and fuse_options['nothreads'] is True):
+            # if the fuse threading is disabled, we can re-use
+            # one rpc connection to issue multiple rpc requests.
+            if self._client is None:
+                self._client = xmlrpclib.ServerProxy(
+                    'http://%s:%d' % (self._config.get('core_server'),
+                                      self._config.get('core_port')),
+                    allow_none=True)
+            try:
+                return getattr(self._client, method)(*params)
+            except xmlrpclib.Error, e:
+                print e.__class__
+                del self._client
+                self._client = None
+                raise
+        else:
+            # if the fuse threading is enabled, we cannot re-use
+            # one rpc connection because multiple rpc requests may
+            # be issued concurrently which is not allowed by the
+            # XMLRPC spec.
+            client = xmlrpclib.ServerProxy(
                 'http://%s:%d' % (self._config.get('core_server'),
                                   self._config.get('core_port')),
                 allow_none=True)
-        try:
-            return getattr(self._client, method)(*params)
-        except xmlrpclib.Error, e:
-            print e.__class__
-            del self._client
-            self._client = None
-            raise
+            try:
+                return getattr(client, method)(*params)
+            except xmlrpclib.Error, e:
+                print e.__class__
+                del self._client
+                self._client = None
+                raise
+            finally:
+                del client 
 
 class UKAIXMLRPCTranslation(UKAIRPCTranslation):
     def encode(self, source):

@@ -30,6 +30,7 @@ from SimpleXMLRPCServer import SimpleXMLRPCServer
 import SocketServer
 import xmlrpclib
 
+from ukai_config import UKAIConfig
 from ukai_core import UKAICore, UKAI_CONFIG_FILE_DEFAULT
 
 class AsyncSimpleXMLRPCServer(SocketServer.ThreadingMixIn,
@@ -38,7 +39,8 @@ class AsyncSimpleXMLRPCServer(SocketServer.ThreadingMixIn,
 
 def main():
     try:
-        core = UKAICore(config_file=UKAI_CONFIG_FILE_DEFAULT)
+        config = UKAIConfig(UKAI_CONFIG_FILE_DEFAULT)
+        core = UKAICore(config)
         server = AsyncSimpleXMLRPCServer((core.core_server,
                                           core.core_port),
                                          logRequests=False,

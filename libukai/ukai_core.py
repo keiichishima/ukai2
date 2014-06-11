@@ -48,10 +48,10 @@ class UKAICore(object):
     ''' UKAI core processing.
     '''
 
-    def __init__(self, config_file):
+    def __init__(self, config):
         self._metadata_dict = {}
         self._data_dict = {}
-        self._config = UKAIConfig(config_file)
+        self._config = config
         self._node_error_state_set = UKAINodeErrorStateSet()
         self._open_image_set = set()
         self._rpc_trans = UKAIXMLRPCTranslation()
