@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import getopt
+import json
 import sys
 
 from ukai_config import UKAIConfig
@@ -28,47 +29,19 @@ class UKAICtl(object):
     def core_port(self, core_port):
         self._config.set('core_port', core_port)
 
-    def add_image(self, params):
+    def add_image(self, *params):
         if len(params) < 1:
             print 'Usage: %s add_image IMAGE_NAME' % sys.argv[0]
             return -1
         return self._rpc_client.call('add_image', *params)
 
-    def remove_image(self, params):
+    def remove_image(self, *params):
         if len(params) < 1:
             print 'Usage: %s remove_image IMAGE_NAME' % sys.argv[0]
             return -1
         return self._rpc_client.call('remove_image', *params)
 
-    def add_location(self, params):
-        if len(params) < 2:
-            print ('Usage: %s add_location IMAGE_NAME LOCATION'
-                   % sys.argv[0])
-            return -1
-        return self._rpc_client.call('add_location', *params)
-
-    def remove_location(self, params):
-        if len(params) < 2:
-            print ('Usage: %s remove_location IMAGE_NAME LOCATION'
-                   % sys.argv[0])
-            return -1
-        return self._rpc_client.call('remove_location', *params)
-
-    def add_hypervisor(self, params):
-        if len(params) < 2:
-            print ('Usage: %s add_hypervisor IMAGE_NAME HYPERVISOR'
-                   % sys.argv[0])
-            return -1
-        return self._rpc_client.call('add_hypervisor', *params)
-
-    def remove_hypervisor(self, params):
-        if len(params) < 2:
-            print ('Usage: %s remove_hypervisor IMAGE_NAME HYPERVISOR'
-                   % sys.argv[0])
-            return -1
-        return self._rpc_client.call('remove_hypervisor', *params)
-
-    def get_metadata(self, params):
+    def get_metadata(self, *params):
         if len(params) < 1:
             print 'Usage: %s get_metadata IMAGE_NAME' % sys.argv[0]
             return -1
@@ -76,12 +49,74 @@ class UKAICtl(object):
         print metadata
         return 0
 
+    def add_location(self, *params):
+        if len(params) < 2:
+            print ('Usage: %s add_location IMAGE_NAME LOCATION'
+                   % sys.argv[0])
+            return -1
+        return self._rpc_client.call('add_location', *params)
+
+    def remove_location(self, *params):
+        if len(params) < 2:
+            print ('Usage: %s remove_location IMAGE_NAME LOCATION'
+                   % sys.argv[0])
+            return -1
+        return self._rpc_client.call('remove_location', *params)
+
+    def add_hypervisor(self, *params):
+        if len(params) < 2:
+            print ('Usage: %s add_hypervisor IMAGE_NAME HYPERVISOR'
+                   % sys.argv[0])
+            return -1
+        return self._rpc_client.call('add_hypervisor', *params)
+
+    def remove_hypervisor(self, *params):
+        if len(params) < 2:
+            print ('Usage: %s remove_hypervisor IMAGE_NAME HYPERVISOR'
+                   % sys.argv[0])
+            return -1
+        return self._rpc_client.call('remove_hypervisor', *params)
+
+    def synchronize(self, *params):
+        if len(params) < 1:
+            print 'Usage: %s synchronize [-s START_BLOCK] [-e END_BLOCK] [-v] IMAGE_NAME' % sys.argv[0]
+            return -1
+
+        start = 0
+        end = -1
+        verbose = False
+        (optlist, args) = getopt.getopt(params, 's:e:v')
+        for opt_pair in optlist:
+            if opt_pair[0] == '-s':
+                start = int(opt_pair[1])
+            if opt_pair[0] == '-e':
+                end = int(opt_pair[1])
+            if opt_pair[0] == '-v':
+                verbose = True
+        image_name = args[0]
+        ret, json_metadata = self._rpc_client.call('get_metadata',
+                                                   image_name)
+        if json_metadata is None:
+            return -1
+        metadata = json.loads(json_metadata)
+        nblocks = metadata['size'] / metadata['block_size']
+
+        if (start < 0) or (end > nblocks - 1):
+            print 'Block index out of range (must be 0 to %d)' % (nblocks - 1)
+            return -1
+        if (end != -1) and (end < start):
+            print 'END_BLOCK must be greater or equal to START_BLOCK'
+            return -1
+
+        return self._rpc_client.call('synchronize', image_name,
+                                     start, end, verbose)
+
 
 def usage():
     print '''Usage: %s SUBCOMMAND PARAMS
-[SUBCOMMANDS]
-\tadd_image IMAGE_NAME
-\tremove_image IMAGE_NAME''' % sys.argv[0]
+  SUBCOMMANDS: add_image, remove_image, get_metadata
+    add_location, remove_location, add_hypervisor, remove_hypervisor,
+    synchronize''' % sys.argv[0]
 
 def main():
     server = '127.0.0.1'
@@ -104,7 +139,7 @@ def main():
         usage()
         sys.exit(-1)
 
-    return getattr(ctl, args[0])(args[1:])
+    return getattr(ctl, args[0])(*args[1:])
 
 if __name__ == '__main__':
     main()

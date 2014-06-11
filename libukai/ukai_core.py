@@ -200,6 +200,11 @@ class UKAICore(object):
         del UKAIStatistics[image_name]
         return 0
 
+    def get_metadata(self, image_name):
+        if image_name not in self._metadata_dict:
+            return errno.ENOENT, None
+        return 0, json.dumps(self._metadata_dict[image_name].metadata)
+
     def add_location(self, image_name, location,
                      start_index=0, end_index=-1,
                      sync_status=UKAI_OUT_OF_SYNC):
@@ -231,7 +236,22 @@ class UKAICore(object):
         metadata.remove_hypervisor(hypervisor)
         return 0
 
-    def get_metadata(self, image_name):
+    def synchronize(self, image_name, start_index=0, end_index=-1,
+                    verbose=False):
         if image_name not in self._metadata_dict:
-            return errno.ENOENT, None
-        return 0, json.dumps(self._metadata_dict[image_name].metadata)
+            return errno.ENOENT
+        metadata = self._metadata_dict[image_name]
+        data = self._data_dict[image_name]
+        if end_index == -1:
+            end_index = (metadata.size / metadata.block_size) - 1
+        for block_index in range(start_index, end_index + 1):
+            if verbose is True:
+                print 'Syncing block %d (from %d to %d)' % (block_index,
+                                                            start_index,
+                                                            end_index)
+            if data.synchronize_block(block_index) is True:
+                metadata.flush()
+        return 0
+
+    def get_node_error_state_set(self):
+        return self._node_error_state_set.get_list()
