@@ -4,9 +4,9 @@ import getopt
 import json
 import sys
 
-from ukai_config import UKAIConfig
-from ukai_core import UKAI_CONFIG_FILE_DEFAULT
-from ukai_rpc import UKAIXMLRPCClient
+from libukai.ukai_config import UKAIConfig
+from libukai.ukai_core import UKAI_CONFIG_FILE_DEFAULT
+from libukai.ukai_rpc import UKAIXMLRPCClient
 
 class UKAICtl(object):
     def __init__(self, config_file):
